@@ -1,0 +1,15 @@
+scan_to_scan_filter_chain:
+  ros__parameters:
+    filter1:
+      name: ghost_noise_filter
+      type: laser_filters/GhostNoiseFilter
+      params:
+        var_threshold: 0.001  # variance threshold - calculate the variance for every array member in time 
+        range_threshold: 0.15  # threshold for the range of the laser (everything below will be filtered)
+        memory_buffer_size: 4  # how many previous measurements we take into account (mean and variance accounted)
+        intensity_threshold: 100.0  # made to try filtering the intensity based on the given interval
+        intensity_range_treshold: 0.4  # filter the points that are close so that SLAM doesn't go crazy because of them
+        spatial_window: 7  # window size for the spatial consistency (the larger the window the more points are taken) (from each side 7 = 15)
+        spatial_threshold: 0.05  # the radius we're calculating in
+        k_neigbors: 5  # if more than 5 neighbours are within the spatial_window within the radius of the spatial threshold 
+                       # the point will be removed 
