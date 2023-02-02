@@ -99,6 +99,7 @@ public:
   int memory_buffer_size_;
   int scan_size;
   int k_neigbors_;
+  double min_angle_threshold_;
   std::vector<sensor_msgs::msg::LaserScan> laser_scans_buffer;  
   std::vector<double> ranges_means;
   std::vector<double> ranges_variance;
@@ -115,6 +116,7 @@ public:
     spatial_threshold_ = 0.1;
     scan_size = 1368;
     k_neigbors_ = 5;
+    min_angle_threshold_ = 0.6;
     getParam("var_threshold", var_threshold_);
     getParam("range_threshold", range_threshold_);
     getParam("memory_buffer_size", memory_buffer_size_);
@@ -123,6 +125,7 @@ public:
     getParam("spatial_window", spatial_window_);
     getParam("spatial_threshold", spatial_threshold_);
     getParam("k_neigbors", k_neigbors_);
+    getParam("min_angle_threshold", min_angle_threshold_);
     ranges_means.resize(scan_size);
     ranges_variance.resize(scan_size);
     //file.open("debug.csv");
@@ -162,6 +165,45 @@ public:
       {
         filtered_scan.ranges[i] = std::numeric_limits<float>::quiet_NaN();
       }
+
+      // MIN ANGLE between Neighbours
+      // 1. Get the angle to both neighbours
+      // 2. Remove points with low angle
+
+
+      if (i > 0 && i < input_scan.ranges.size()) {
+
+        double previous;
+        if (i == 0) {
+          previous = input_scan.ranges[i];
+        } else {
+          previous = input_scan.ranges[i-1];
+        }
+
+        double next;
+        if (i >= input_scan.ranges.size()-1) {
+          next = input_scan.ranges[i];
+        } else {
+          next = input_scan.ranges[i+1];
+        }
+
+        double our_point = input_scan.ranges[i];
+
+        // distance to the neighbour ray
+        double dist_to_neighbour = std::abs(our_point * std::sin(angle_increment));
+
+        double radial_dist_1 = std::abs(our_point - previous);
+        double radial_dist_2 = std::abs(next - our_point);
+
+        double angle_1 = std::atan2(dist_to_neighbour, radial_dist_1);
+        double angle_2 = std::atan2(dist_to_neighbour, radial_dist_2);
+        double angle = (angle_1 + angle_2) / 2;
+
+        if (angle < min_angle_threshold_) {
+          filtered_scan.ranges[i] = std::numeric_limits<float>::quiet_NaN();  
+        }
+      }
+
 
       // SPATIAL CONSISTENCY
       double r1 = filtered_scan.ranges[i];
