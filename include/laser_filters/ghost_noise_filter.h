@@ -42,6 +42,8 @@
 
 #include "filters/filter_base.hpp"
 
+#include "params_utils/params_utils.hpp"
+
 #include <sensor_msgs/msg/laser_scan.hpp>
 #include <vector>
 
@@ -89,6 +91,18 @@ class GhostNoiseFilter : public filters::FilterBase<sensor_msgs::msg::LaserScan>
   }
 
 public:
+  explicit GhostNoiseFilter()
+    : filters::FilterBase<sensor_msgs::msg::LaserScan>()
+  {
+    //
+  }
+
+  virtual ~GhostNoiseFilter()
+  {
+    /*file.close();*/
+  }
+
+  std::vector<rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr> cb_handles;
 
   double var_threshold_;
   double range_threshold_;
@@ -105,7 +119,7 @@ public:
   std::vector<double> ranges_variance;
   //std::ofstream file;
 
-  bool configure()
+  bool configure() override
   {
     var_threshold_ = 10.0;
     range_threshold_ = 0.05;
@@ -117,24 +131,25 @@ public:
     scan_size = 1368;
     k_neigbors_ = 5;
     min_angle_threshold_ = 0.6;
-    getParam("var_threshold", var_threshold_);
-    getParam("range_threshold", range_threshold_);
-    getParam("memory_buffer_size", memory_buffer_size_);
-    getParam("intensity_threshold", intensity_threshold_);
-    getParam("intensity_range_treshold", intensity_range_treshold_);
-    getParam("spatial_window", spatial_window_);
-    getParam("spatial_threshold", spatial_threshold_);
-    getParam("k_neigbors", k_neigbors_);
-    getParam("min_angle_threshold", min_angle_threshold_);
+
+    cb_handles.push_back(ParamUtils::declareParameter(logging_interface_, params_interface_, "var_threshold", &var_threshold_));
+    cb_handles.push_back(ParamUtils::declareParameter(logging_interface_, params_interface_, "range_threshold", &range_threshold_));
+    cb_handles.push_back(ParamUtils::declareParameter(logging_interface_, params_interface_, "memory_buffer_size", &memory_buffer_size_));
+    cb_handles.push_back(ParamUtils::declareParameter(logging_interface_, params_interface_, "intensity_threshold", &intensity_threshold_));
+    cb_handles.push_back(ParamUtils::declareParameter(logging_interface_, params_interface_, "intensity_range_treshold", &intensity_range_treshold_));
+    cb_handles.push_back(ParamUtils::declareParameter(logging_interface_, params_interface_, "spatial_window", &spatial_window_));
+    cb_handles.push_back(ParamUtils::declareParameter(logging_interface_, params_interface_, "spatial_threshold", &spatial_threshold_));
+    cb_handles.push_back(ParamUtils::declareParameter(logging_interface_, params_interface_, "k_neigbors", &k_neigbors_));
+    cb_handles.push_back(ParamUtils::declareParameter(logging_interface_, params_interface_, "min_angle_threshold", &min_angle_threshold_));
+
     ranges_means.resize(scan_size);
     ranges_variance.resize(scan_size);
+
     //file.open("debug.csv");
     return true;
   }
 
-  virtual ~GhostNoiseFilter(){ /*file.close();*/ }
-
-  bool update(const sensor_msgs::msg::LaserScan& input_scan, sensor_msgs::msg::LaserScan& filtered_scan)
+  bool update(const sensor_msgs::msg::LaserScan& input_scan, sensor_msgs::msg::LaserScan& filtered_scan) override
   {    
     filtered_scan = input_scan;
     // add scan to memory buffer
