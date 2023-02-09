@@ -113,7 +113,7 @@ public:
 
   bool configure() override
   {
-    param_listener = std::make_unique<ghost_noise_filter::ParamListener>(params_interface_);
+    param_listener = std::make_unique<ghost_noise_filter::ParamListener>(params_interface_, param_prefix_);
     params = param_listener->get_params();
 
     ranges_means.resize(params.scan_size);
