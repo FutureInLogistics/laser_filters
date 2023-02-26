@@ -8,11 +8,21 @@ project(laser_filters)
 find_package(ament_cmake_auto REQUIRED)
 ament_auto_find_build_dependencies()
 
+# find_package(generate_parameter_library REQUIRED) # done automatically by ament_auto_find_build_dependencies()
+
 ##############################################################################
 # Build
 ##############################################################################
 
 ament_auto_add_library(laser_scan_filters SHARED src/laser_scan_filters.cpp)
+
+generate_parameter_library(
+    ghost_noise_filter_parameters # cmake target name for the parameter library
+    src/ghost_noise_filter_parameters.yaml # path to input yaml file
+)
+target_link_libraries(laser_scan_filters
+    ghost_noise_filter_parameters
+)
 
 set(FILTER_CHAINS
     scan_to_cloud_filter_chain
@@ -42,7 +52,7 @@ if(BUILD_TESTING)
     ament_target_dependencies(${TEST_NAME} filters pluginlib rclcpp sensor_msgs)
     ament_add_test(
         ${TEST_NAME}
-        COMMAND 
+        COMMAND
             $<TARGET_FILE:${TEST_NAME}>
             --ros-args --params-file ${PROJECT_SOURCE_DIR}/test/${TEST_NAME}.yaml
             --gtest_output=xml:${RESULT_FILENAME}
